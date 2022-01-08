@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "mongo-auth-keys",
+  "version": "${version}",
+  "name": "MongoAuthKeys",
+  "description": "MongoAuth client companion",
+  "authors": [
+    "Treesoid"
+  ],
+  "contact": {
+    "repo": "https://www.github.com/Treesoid/MongoAuthKeys"
+  },
+  "license": "MIT",
+  "icon": "assets/mongo-auth-keys/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "io.github.treesoid.mongoauthkeys.MongoAuthKeys"
+    ]
+  },
+  "mixins": [
+    "mongo-auth-keys.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.12.12",
+    "fabric": "*",
+    "minecraft": "1.18.1"
+  }
+}
