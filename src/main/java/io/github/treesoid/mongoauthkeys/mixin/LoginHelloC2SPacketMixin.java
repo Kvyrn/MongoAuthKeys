@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class LoginHelloC2SPacketMixin {
     @Inject(method = "write", at = @At("TAIL"))
     private void insertMetadata(PacketByteBuf buf, CallbackInfo ci) {
-        if (!MongoAuthKeys.version.equals("invalid")) {
+        if (!MongoAuthKeys.version.equals("invalid") && MongoAuthKeys.useOnCurrentServer() && MongoAuthKeys.getKeyPair() != null) {
             buf.writeString(MongoAuthKeys.version);
         }
     }

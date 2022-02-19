@@ -1,0 +1,4 @@
+{
+  "mongo-auth-keys.enabledOnServer": "MongoAuthKeys: enabled",
+  "mongo-auth-keys.disabledOnServer": "MongoAuthKeys: disabled"
+}

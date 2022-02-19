@@ -1,15 +1,22 @@
 package io.github.treesoid.mongoauthkeys;
 
+import io.github.treesoid.mongoauthkeys.util.MAKConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.impl.gui.FabricGuiEntry;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.security.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class MongoAuthKeys implements ModInitializer {
@@ -17,18 +24,29 @@ public class MongoAuthKeys implements ModInitializer {
     public static String version = "invalid";
     public static Logger LOGGER = LogManager.getLogger();
     private static KeyPair keyPair;
+    public static List<String> allowedServers;
 
     @Override
     public void onInitialize() {
         FabricLoader.getInstance().getModContainer(modid).ifPresent(modContainer -> version = modContainer.getMetadata().getVersion().toString());
 
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            keyPair = kpg.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+        keyPair = MAKConfig.readKeypair();
+        if (keyPair == null) {
+            try {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+                kpg.initialize(2048);
+                keyPair = kpg.generateKeyPair();
+            } catch (NoSuchAlgorithmException e) {
+                FabricGuiEntry.displayCriticalError(e, true);
+            }
+            try {
+                MAKConfig.writeKeypair(keyPair);
+            } catch (IOException e) {
+                FabricGuiEntry.displayCriticalError(new IOException("Error writing key pair!", e), true);
+            }
         }
+
+        allowedServers = MAKConfig.readAllowedServers();
     }
 
     public static void registerRecivers() {
@@ -65,12 +83,36 @@ public class MongoAuthKeys implements ModInitializer {
         return new byte[0];
     }
 
-    // TODO
-    private static KeyPair getKeyPair() {
+    public static KeyPair getKeyPair() {
         return keyPair;
     }
 
     public static byte[] getPubkey() {
         return getKeyPair().getPublic().getEncoded();
+    }
+
+    public static boolean useOnCurrentServer() {
+        try {
+            String address = Objects.requireNonNull(MinecraftClient.getInstance().getCurrentServerEntry()).address;
+            return allowedServers.contains(address.toLowerCase(Locale.ROOT));
+        } catch (NullPointerException e) {
+            return false;
+        }
+    }
+
+    public static void addAllowedServer(String address) {
+        if (allowedServers.contains(address)) return;
+        allowedServers.add(address);
+        MAKConfig.writeAllowedServers(allowedServers);
+    }
+
+    public static void removeAllowedServer(String address) {
+        if (allowedServers.remove(address)) {
+            MAKConfig.writeAllowedServers(allowedServers);
+        }
+    }
+
+    public static boolean isAllowedOnServer(String address) {
+        return allowedServers.contains(address);
     }
 }
